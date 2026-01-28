@@ -21,20 +21,33 @@ interface LandData {
   };
 }
 
-// Vietnam bounding box (approximate)
-const VIETNAM_BOUNDS = {
-  latMin: 8.5,
-  latMax: 23.5,
-  lonMin: 102,
-  lonMax: 110,
-};
+// Vietnam S-shape regions (more accurate than simple bounding box)
+// Divided into 3 main regions: North, Central, South
+const VIETNAM_REGIONS = [
+  // Northern Vietnam (Bắc Bộ) - wider area
+  { latMin: 20.5, latMax: 23.4, lonMin: 102.1, lonMax: 108.0 },
+  // North-Central transition
+  { latMin: 19.0, latMax: 21.5, lonMin: 103.5, lonMax: 107.5 },
+  // Central Vietnam (Trung Bộ) - narrow strip along coast
+  { latMin: 15.5, latMax: 19.5, lonMin: 105.5, lonMax: 109.5 },
+  // Central narrow part
+  { latMin: 13.0, latMax: 16.0, lonMin: 107.0, lonMax: 109.5 },
+  // South-Central
+  { latMin: 11.0, latMax: 13.5, lonMin: 107.5, lonMax: 109.5 },
+  // Southern Vietnam (Nam Bộ) - Mekong Delta area
+  { latMin: 8.5, latMax: 11.5, lonMin: 104.5, lonMax: 107.5 },
+  // Ca Mau peninsula
+  { latMin: 8.5, latMax: 10.0, lonMin: 104.0, lonMax: 105.5 },
+];
 
-// Check if point is in Vietnam region
+// Check if point is in Vietnam region (S-shape aware)
 function isInVietnam(lat: number, lon: number): boolean {
-  return lat >= VIETNAM_BOUNDS.latMin && 
-         lat <= VIETNAM_BOUNDS.latMax && 
-         lon >= VIETNAM_BOUNDS.lonMin && 
-         lon <= VIETNAM_BOUNDS.lonMax;
+  return VIETNAM_REGIONS.some(region => 
+    lat >= region.latMin && 
+    lat <= region.latMax && 
+    lon >= region.lonMin && 
+    lon <= region.lonMax
+  );
 }
 
 // Convert a point inside polygon check
@@ -125,7 +138,7 @@ export function Globe() {
           const pz = radius * Math.sin(phi) * Math.sin(theta);
           const py = radius * Math.cos(phi);
 
-          // Separate Vietnam points
+          // Check if in Vietnam using S-shape regions
           if (isInVietnam(lat, lon)) {
             vietnamPoints.push(px, py, pz);
           } else {
@@ -135,30 +148,34 @@ export function Globe() {
       }
     }
     
-    // Add extra density for Vietnam
-    const vnLatStep = 0.15;
-    const vnLonStep = 0.15;
-    for (let lat = VIETNAM_BOUNDS.latMin; lat <= VIETNAM_BOUNDS.latMax; lat += vnLatStep) {
-      for (let lon = VIETNAM_BOUNDS.lonMin; lon <= VIETNAM_BOUNDS.lonMax; lon += vnLonStep) {
-        const isOnLand = landPolygons.some(polygon => 
-          pointInPolygon([lon, lat], polygon)
-        );
-        
-        if (isOnLand) {
-          const jitterLat = lat + (Math.random() - 0.5) * 0.1;
-          const jitterLon = lon + (Math.random() - 0.5) * 0.1;
+    // Add extra high-density points specifically for Vietnam
+    // Following the S-shape with fine granularity
+    VIETNAM_REGIONS.forEach(region => {
+      const vnLatStep = 0.12;
+      const vnLonStep = 0.12;
+      
+      for (let lat = region.latMin; lat <= region.latMax; lat += vnLatStep) {
+        for (let lon = region.lonMin; lon <= region.lonMax; lon += vnLonStep) {
+          const isOnLand = landPolygons.some(polygon => 
+            pointInPolygon([lon, lat], polygon)
+          );
           
-          const phi = (90 - jitterLat) * (Math.PI / 180);
-          const theta = (jitterLon + 180) * (Math.PI / 180);
-          
-          const px = -(radius * Math.sin(phi) * Math.cos(theta));
-          const pz = radius * Math.sin(phi) * Math.sin(theta);
-          const py = radius * Math.cos(phi);
+          if (isOnLand) {
+            const jitterLat = lat + (Math.random() - 0.5) * 0.08;
+            const jitterLon = lon + (Math.random() - 0.5) * 0.08;
+            
+            const phi = (90 - jitterLat) * (Math.PI / 180);
+            const theta = (jitterLon + 180) * (Math.PI / 180);
+            
+            const px = -(radius * Math.sin(phi) * Math.cos(theta));
+            const pz = radius * Math.sin(phi) * Math.sin(theta);
+            const py = radius * Math.cos(phi);
 
-          vietnamPoints.push(px, py, pz);
+            vietnamPoints.push(px, py, pz);
+          }
         }
       }
-    }
+    });
 
     return { 
       worldPositions: new Float32Array(worldPoints), 
@@ -177,7 +194,7 @@ export function Globe() {
 
   return (
     <group>
-      {/* World map dots - cyan */}
+      {/* World map dots - subtle cyan */}
       <points>
         <bufferGeometry>
           <bufferAttribute
@@ -189,14 +206,14 @@ export function Globe() {
         </bufferGeometry>
         <pointsMaterial
           size={0.02}
-          color="#00cccc"
+          color="#00aaaa"
           transparent
-          opacity={0.7}
+          opacity={0.65}
           sizeAttenuation
         />
       </points>
       
-      {/* Vietnam dots - brighter, larger */}
+      {/* Vietnam dots - brighter, denser, larger */}
       <points>
         <bufferGeometry>
           <bufferAttribute
@@ -207,7 +224,7 @@ export function Globe() {
           />
         </bufferGeometry>
         <pointsMaterial
-          size={0.035}
+          size={0.03}
           color="#00ffff"
           transparent
           opacity={1}
