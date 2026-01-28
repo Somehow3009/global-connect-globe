@@ -1,15 +1,9 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as topojson from 'topojson-client';
 import { GLOBE_CONFIG, VIETNAM_COORDS } from '@/lib/globeUtils';
 import type { Ring } from '@/lib/polygonUtils';
-import {
-  boundsFromRings,
-  extractRingsFromFeature,
-  jitterWithinRings,
-  pointInAnyRing,
-  pointInPolygon,
-} from '@/lib/polygonUtils';
-import { buildRingSpatialIndex, queryRingSpatialIndex } from '@/lib/ringSpatialIndex';
+import { extractRingsFromFeature, pointInAnyRing } from '@/lib/polygonUtils';
+import { useGlobeWorker } from '@/hooks/useGlobeWorker';
 
 interface LandData {
   type: string;
@@ -38,7 +32,6 @@ interface CountriesData {
     };
   };
 }
-
 
 export function Globe() {
   const [landPolygons, setLandPolygons] = useState<Ring[]>([]);
@@ -70,12 +63,12 @@ export function Globe() {
         land.features.forEach((feature: any) => {
           if (feature.geometry.type === 'Polygon') {
             feature.geometry.coordinates.forEach((ring: any) => {
-              polygons.push(ring as [number, number][]);
+              polygons.push(ring as Ring);
             });
           } else if (feature.geometry.type === 'MultiPolygon') {
             feature.geometry.coordinates.forEach((polygon: any) => {
               polygon.forEach((ring: any) => {
-                polygons.push(ring as [number, number][]);
+                polygons.push(ring as Ring);
               });
             });
           }
@@ -113,98 +106,15 @@ export function Globe() {
     };
   }, []);
 
-  const landIndex = useMemo(() => {
-    if (landPolygons.length === 0) return null;
-    // Coarse bins are enough and much faster than checking every ring.
-    return buildRingSpatialIndex(landPolygons, 10);
-  }, [landPolygons]);
+  // Use Web Worker for heavy computation
+  const { positions, computing } = useGlobeWorker(
+    landPolygons,
+    vietnamRings,
+    GLOBE_CONFIG.radius,
+    VIETNAM_COORDS
+  );
 
-  const { worldPositions, vietnamPositions } = useMemo(() => {
-    if (landPolygons.length === 0 || vietnamRings.length === 0 || !landIndex) {
-      return { 
-        worldPositions: new Float32Array(0), 
-        vietnamPositions: new Float32Array(0) 
-      };
-    }
-
-    const worldPoints: number[] = [];
-    const vietnamPoints: number[] = [];
-    const radius = GLOBE_CONFIG.radius;
-    
-    // Generate points for world map (exclude Vietnam using real polygon)
-    const latStep = 0.6;
-    const lonStep = 0.6;
-    
-    for (let lat = -90; lat <= 90; lat += latStep) {
-      const adjustedLonStep = lonStep / Math.max(Math.cos(lat * Math.PI / 180), 0.1);
-      
-      for (let lon = -180; lon <= 180; lon += adjustedLonStep) {
-         const candidates = queryRingSpatialIndex(landIndex, lon, lat);
-         const isOnLand = candidates.length
-           ? candidates.some((idx) => pointInPolygon([lon, lat], landPolygons[idx]))
-           : false;
-        
-        if (isOnLand) {
-          const isVietnam = pointInAnyRing([lon, lat], vietnamRings);
-
-          // For Vietnam points, only jitter within the Vietnam polygon
-          const jittered = isVietnam
-            ? jitterWithinRings(lat, lon, 0.4, vietnamRings)
-            : {
-                lat: lat + (Math.random() - 0.5) * 0.5,
-                lon: lon + (Math.random() - 0.5) * 0.5,
-              };
-          const jitterLat = jittered.lat;
-          const jitterLon = jittered.lon;
-          
-          const phi = (90 - jitterLat) * (Math.PI / 180);
-          const theta = (jitterLon + 180) * (Math.PI / 180);
-          
-          const px = -(radius * Math.sin(phi) * Math.cos(theta));
-          const pz = radius * Math.sin(phi) * Math.sin(theta);
-          const py = radius * Math.cos(phi);
-
-          if (isVietnam) {
-            vietnamPoints.push(px, py, pz);
-          } else {
-            worldPoints.push(px, py, pz);
-          }
-        }
-      }
-    }
-
-    // Extra density in Vietnam bounding box (real border)
-    const vnBounds = boundsFromRings(vietnamRings);
-    const vnLatStep = 0.12;
-    const vnLonStep = 0.12;
-
-    for (let lat = vnBounds.latMin; lat <= vnBounds.latMax; lat += vnLatStep) {
-      const adjustedLonStep = vnLonStep / Math.max(Math.cos(lat * Math.PI / 180), 0.2);
-      for (let lon = vnBounds.lonMin; lon <= vnBounds.lonMax; lon += adjustedLonStep) {
-        if (!pointInAnyRing([lon, lat], vietnamRings)) continue;
-
-        const jittered = jitterWithinRings(lat, lon, 0.18, vietnamRings);
-        const jitterLat = jittered.lat;
-        const jitterLon = jittered.lon;
-
-        const phi = (90 - jitterLat) * (Math.PI / 180);
-        const theta = (jitterLon + 180) * (Math.PI / 180);
-
-        const px = -(radius * Math.sin(phi) * Math.cos(theta));
-        const pz = radius * Math.sin(phi) * Math.sin(theta);
-        const py = radius * Math.cos(phi);
-
-        vietnamPoints.push(px, py, pz);
-      }
-    }
-
-    return { 
-      worldPositions: new Float32Array(worldPoints), 
-      vietnamPositions: new Float32Array(vietnamPoints) 
-    };
-   }, [landPolygons, vietnamRings, landIndex]);
-
-  if (loading || worldPositions.length === 0) {
+  if (loading || computing || !positions) {
     return (
       <mesh>
         <sphereGeometry args={[GLOBE_CONFIG.radius, 32, 32]} />
@@ -212,6 +122,8 @@ export function Globe() {
       </mesh>
     );
   }
+
+  const { worldPositions, vietnamPositions } = positions;
 
   return (
     <group>
