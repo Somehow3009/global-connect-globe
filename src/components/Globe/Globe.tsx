@@ -1,17 +1,15 @@
-import { useMemo, useRef, useEffect, useState } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useMemo, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { GLOBE_CONFIG } from '@/lib/globeUtils';
 
 export function Globe() {
-  const pointsRef = useRef<THREE.Points>(null);
   const [imageData, setImageData] = useState<ImageData | null>(null);
 
   // Load the earth texture to sample for continent positions
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = '/earth-texture.jpg';
+    img.src = '/earth-map.jpg';
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -27,7 +25,6 @@ export function Globe() {
 
   const positions = useMemo(() => {
     if (!imageData) {
-      // Return empty positions while loading
       return new Float32Array(0);
     }
 
@@ -36,7 +33,9 @@ export function Globe() {
     const radius = GLOBE_CONFIG.radius;
 
     // Sample the texture to place dots on land only
-    const step = Math.max(1, Math.floor(Math.sqrt((width * height) / GLOBE_CONFIG.dotCount)));
+    // Use smaller step for more accurate continent shape
+    const targetPoints = GLOBE_CONFIG.dotCount;
+    const step = Math.max(1, Math.floor(Math.sqrt((width * height) / (targetPoints * 3))));
     
     for (let y = 0; y < height; y += step) {
       for (let x = 0; x < width; x += step) {
@@ -45,18 +44,22 @@ export function Globe() {
         const g = data[index + 1];
         const b = data[index + 2];
         
-        // Check if pixel is land (not water - water is typically dark blue)
+        // Detect land vs water more accurately
+        // Land is typically green/brown, water is blue
+        // Check if it's NOT water (blue dominant)
+        const isWater = b > 100 && b > r * 0.9 && b > g * 0.8;
+        const isIce = r > 200 && g > 200 && b > 200; // White/ice areas
         const brightness = (r + g + b) / 3;
-        const isWater = b > r + 20 && b > g + 20 && brightness < 120;
         
-        if (!isWater && brightness > 30) {
+        // Include land (green/brown) and exclude deep water
+        if ((!isWater && brightness > 20) || isIce) {
           // Convert image coordinates to lat/lon
           const lon = (x / width) * 360 - 180;
           const lat = 90 - (y / height) * 180;
 
-          // Add some random offset for organic look
-          const jitterLat = lat + (Math.random() - 0.5) * 2;
-          const jitterLon = lon + (Math.random() - 0.5) * 2;
+          // Small random offset for organic look
+          const jitterLat = lat + (Math.random() - 0.5) * 1.5;
+          const jitterLon = lon + (Math.random() - 0.5) * 1.5;
 
           // Convert to 3D position
           const phi = (90 - jitterLat) * (Math.PI / 180);
@@ -74,25 +77,18 @@ export function Globe() {
     return new Float32Array(points);
   }, [imageData]);
 
-  // Subtle rotation animation
-  useFrame(() => {
-    if (pointsRef.current) {
-      // Very subtle rotation handled by OrbitControls autoRotate
-    }
-  });
-
   if (positions.length === 0) {
     // Show loading sphere while texture loads
     return (
       <mesh>
         <sphereGeometry args={[GLOBE_CONFIG.radius, 32, 32]} />
-        <meshBasicMaterial color="#0a1020" transparent opacity={0.5} wireframe />
+        <meshBasicMaterial color="#0a1020" transparent opacity={0.3} wireframe />
       </mesh>
     );
   }
 
   return (
-    <points ref={pointsRef}>
+    <points>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
