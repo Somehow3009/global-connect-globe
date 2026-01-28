@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as topojson from 'topojson-client';
-import { GLOBE_CONFIG, VIETNAM_COORDS } from '@/lib/globeUtils';
+import { GLOBE_CONFIG, VIETNAM_COORDS, VIETNAM_ISLANDS } from '@/lib/globeUtils';
 import type { Ring } from '@/lib/polygonUtils';
 import { extractRingsFromFeature, pointInAnyRing } from '@/lib/polygonUtils';
 import { useGlobeWorker } from '@/hooks/useGlobeWorker';
@@ -111,7 +111,8 @@ export function Globe() {
     landPolygons,
     vietnamRings,
     GLOBE_CONFIG.radius,
-    VIETNAM_COORDS
+    VIETNAM_COORDS,
+    VIETNAM_ISLANDS
   );
 
   if (loading || computing || !positions) {

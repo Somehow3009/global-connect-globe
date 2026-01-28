@@ -2,11 +2,18 @@
 
 import type { Ring } from '@/lib/polygonUtils';
 
+interface IslandCoord {
+  name: string;
+  lat: number;
+  lon: number;
+}
+
 interface WorkerInput {
   landPolygons: Ring[];
   vietnamRings: Ring[];
   radius: number;
   vietnamCoords: { lat: number; lon: number };
+  vietnamIslands: IslandCoord[];
 }
 
 interface WorkerOutput {
@@ -148,7 +155,7 @@ function querySpatialIndex(index: SpatialIndex, lon: number, lat: number): numbe
 }
 
 function generatePositions(input: WorkerInput): WorkerOutput {
-  const { landPolygons, vietnamRings, radius } = input;
+  const { landPolygons, vietnamRings, radius, vietnamIslands } = input;
 
   const worldPoints: number[] = [];
   const vietnamPoints: number[] = [];
@@ -214,6 +221,27 @@ function generatePositions(input: WorkerInput): WorkerOutput {
       const pz = radius * Math.sin(phi) * Math.sin(theta);
       const py = radius * Math.cos(phi);
 
+      vietnamPoints.push(px, py, pz);
+    }
+  }
+
+  // Add Vietnam's islands (Hoàng Sa & Trường Sa)
+  for (const island of vietnamIslands) {
+    // Generate cluster of dots around each island
+    const dotCount = 8; // dots per island
+    const spread = 0.15; // degree spread
+    
+    for (let i = 0; i < dotCount; i++) {
+      const lat = island.lat + (Math.random() - 0.5) * spread;
+      const lon = island.lon + (Math.random() - 0.5) * spread;
+      
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lon + 180) * (Math.PI / 180);
+      
+      const px = -(radius * Math.sin(phi) * Math.cos(theta));
+      const pz = radius * Math.sin(phi) * Math.sin(theta);
+      const py = radius * Math.cos(phi);
+      
       vietnamPoints.push(px, py, pz);
     }
   }
