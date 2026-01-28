@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Line } from '@react-three/drei';
@@ -15,18 +15,8 @@ interface AnimatedLineProps {
   delay: number;
 }
 
-const AnimatedLine = forwardRef<any, AnimatedLineProps>(function AnimatedLine(
-  { points, delay },
-  forwardedRef
-) {
+function AnimatedLine({ points, delay }: AnimatedLineProps) {
   const lineRef = useRef<any>(null);
-
-  const setLineRef = (node: any) => {
-    lineRef.current = node;
-    if (!forwardedRef) return;
-    if (typeof forwardedRef === 'function') forwardedRef(node);
-    else (forwardedRef as any).current = node;
-  };
   
   const pointsArray = useMemo(() => {
     return points.map(p => [p.x, p.y, p.z] as [number, number, number]);
@@ -43,7 +33,7 @@ const AnimatedLine = forwardRef<any, AnimatedLineProps>(function AnimatedLine(
 
   return (
     <Line
-      ref={setLineRef}
+      ref={lineRef}
       points={pointsArray}
       color="#8844ff"
       lineWidth={1.5}
@@ -51,14 +41,10 @@ const AnimatedLine = forwardRef<any, AnimatedLineProps>(function AnimatedLine(
       opacity={0.35}
     />
   );
-});
-AnimatedLine.displayName = 'AnimatedLine';
+}
 
 // Small glowing endpoint for destination cities
-const CityMarker = forwardRef<THREE.Group, { position: THREE.Vector3; delay: number }>(function CityMarker(
-  { position, delay },
-  forwardedRef
-) {
+function CityMarker({ position, delay }: { position: THREE.Vector3; delay: number }) {
   const markerRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   
@@ -75,7 +61,7 @@ const CityMarker = forwardRef<THREE.Group, { position: THREE.Vector3; delay: num
   });
 
   return (
-    <group ref={forwardedRef} position={position}>
+    <group position={position}>
       {/* Core point */}
       <mesh ref={markerRef}>
         <sphereGeometry args={[0.025, 12, 12]} />
@@ -88,13 +74,9 @@ const CityMarker = forwardRef<THREE.Group, { position: THREE.Vector3; delay: num
       </mesh>
     </group>
   );
-});
-CityMarker.displayName = 'CityMarker';
+}
 
-export const ConnectionLines = forwardRef<THREE.Group, Record<string, never>>(function ConnectionLines(
-  _props,
-  forwardedRef
-) {
+export function ConnectionLines() {
   const vietnamPos = latLonToVector3(
     VIETNAM_COORDS.lat,
     VIETNAM_COORDS.lon,
@@ -111,7 +93,7 @@ export const ConnectionLines = forwardRef<THREE.Group, Record<string, never>>(fu
   }, [vietnamPos]);
 
   return (
-    <group ref={forwardedRef}>
+    <group>
       {/* Connection lines - subtle purple */}
       {linesData.map((line) => (
         <AnimatedLine key={line.key} points={line.points} delay={line.delay} />
@@ -123,5 +105,4 @@ export const ConnectionLines = forwardRef<THREE.Group, Record<string, never>>(fu
       ))}
     </group>
   );
-});
-ConnectionLines.displayName = 'ConnectionLines';
+}
