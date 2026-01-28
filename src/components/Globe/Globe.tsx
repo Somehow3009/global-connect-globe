@@ -1,6 +1,15 @@
 import { useMemo, useEffect, useState } from 'react';
 import * as topojson from 'topojson-client';
 import { GLOBE_CONFIG, VIETNAM_COORDS } from '@/lib/globeUtils';
+import type { Ring } from '@/lib/polygonUtils';
+import {
+  boundsFromRings,
+  extractRingsFromFeature,
+  jitterWithinRings,
+  pointInAnyRing,
+  pointInPolygon,
+} from '@/lib/polygonUtils';
+import { buildRingSpatialIndex, queryRingSpatialIndex } from '@/lib/ringSpatialIndex';
 
 interface LandData {
   type: string;
@@ -30,90 +39,9 @@ interface CountriesData {
   };
 }
 
-type Ring = [number, number][];
-
-function extractRingsFromFeature(feature: any): Ring[] {
-  const rings: Ring[] = [];
-
-  if (!feature?.geometry) return rings;
-
-  if (feature.geometry.type === 'Polygon') {
-    // coordinates: Ring[]
-    feature.geometry.coordinates.forEach((ring: any) => {
-      rings.push(ring as Ring);
-    });
-  }
-
-  if (feature.geometry.type === 'MultiPolygon') {
-    // coordinates: Ring[][]
-    feature.geometry.coordinates.forEach((polygon: any) => {
-      polygon.forEach((ring: any) => {
-        rings.push(ring as Ring);
-      });
-    });
-  }
-
-  return rings;
-}
-
-function pointInAnyRing(point: [number, number], rings: Ring[]): boolean {
-  return rings.some((ring) => pointInPolygon(point, ring));
-}
-
-function jitterWithinRings(
-  lat: number,
-  lon: number,
-  maxJitter: number,
-  rings: Ring[],
-  attempts: number = 6
-): { lat: number; lon: number } {
-  // Keep trying until the jittered point stays inside the Vietnam polygon.
-  for (let i = 0; i < attempts; i++) {
-    const jLat = lat + (Math.random() - 0.5) * maxJitter;
-    const jLon = lon + (Math.random() - 0.5) * maxJitter;
-    if (pointInAnyRing([jLon, jLat], rings)) return { lat: jLat, lon: jLon };
-  }
-  // Fallback: no jitter
-  return { lat, lon };
-}
-
-function boundsFromRings(rings: Ring[]) {
-  let lonMin = Infinity;
-  let lonMax = -Infinity;
-  let latMin = Infinity;
-  let latMax = -Infinity;
-
-  for (const ring of rings) {
-    for (const [lon, lat] of ring) {
-      lonMin = Math.min(lonMin, lon);
-      lonMax = Math.max(lonMax, lon);
-      latMin = Math.min(latMin, lat);
-      latMax = Math.max(latMax, lat);
-    }
-  }
-
-  return { lonMin, lonMax, latMin, latMax };
-}
-
-// Convert a point inside polygon check
-function pointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
-  let inside = false;
-  const [x, y] = point;
-  
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    
-    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
-      inside = !inside;
-    }
-  }
-  
-  return inside;
-}
 
 export function Globe() {
-  const [landPolygons, setLandPolygons] = useState<[number, number][][]>([]);
+  const [landPolygons, setLandPolygons] = useState<Ring[]>([]);
   const [vietnamRings, setVietnamRings] = useState<Ring[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -137,7 +65,7 @@ export function Globe() {
 
         // Land polygons
         const land = topojson.feature(landData, landData.objects.land) as any;
-        const polygons: [number, number][][] = [];
+        const polygons: Ring[] = [];
 
         land.features.forEach((feature: any) => {
           if (feature.geometry.type === 'Polygon') {
@@ -185,8 +113,14 @@ export function Globe() {
     };
   }, []);
 
+  const landIndex = useMemo(() => {
+    if (landPolygons.length === 0) return null;
+    // Coarse bins are enough and much faster than checking every ring.
+    return buildRingSpatialIndex(landPolygons, 10);
+  }, [landPolygons]);
+
   const { worldPositions, vietnamPositions } = useMemo(() => {
-    if (landPolygons.length === 0 || vietnamRings.length === 0) {
+    if (landPolygons.length === 0 || vietnamRings.length === 0 || !landIndex) {
       return { 
         worldPositions: new Float32Array(0), 
         vietnamPositions: new Float32Array(0) 
@@ -205,7 +139,10 @@ export function Globe() {
       const adjustedLonStep = lonStep / Math.max(Math.cos(lat * Math.PI / 180), 0.1);
       
       for (let lon = -180; lon <= 180; lon += adjustedLonStep) {
-        const isOnLand = landPolygons.some((polygon) => pointInPolygon([lon, lat], polygon));
+         const candidates = queryRingSpatialIndex(landIndex, lon, lat);
+         const isOnLand = candidates.length
+           ? candidates.some((idx) => pointInPolygon([lon, lat], landPolygons[idx]))
+           : false;
         
         if (isOnLand) {
           const isVietnam = pointInAnyRing([lon, lat], vietnamRings);
@@ -265,7 +202,7 @@ export function Globe() {
       worldPositions: new Float32Array(worldPoints), 
       vietnamPositions: new Float32Array(vietnamPoints) 
     };
-  }, [landPolygons, vietnamRings]);
+   }, [landPolygons, vietnamRings, landIndex]);
 
   if (loading || worldPositions.length === 0) {
     return (
