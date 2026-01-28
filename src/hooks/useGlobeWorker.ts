@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Ring } from '@/lib/polygonUtils';
 
+interface IslandCoord {
+  name: string;
+  lat: number;
+  lon: number;
+}
+
 interface WorkerInput {
   landPolygons: Ring[];
   vietnamRings: Ring[];
   radius: number;
   vietnamCoords: { lat: number; lon: number };
+  vietnamIslands: IslandCoord[];
 }
 
 interface WorkerOutput {
@@ -22,7 +29,8 @@ export function useGlobeWorker(
   landPolygons: Ring[],
   vietnamRings: Ring[],
   radius: number,
-  vietnamCoords: { lat: number; lon: number }
+  vietnamCoords: { lat: number; lon: number },
+  vietnamIslands: IslandCoord[]
 ): { positions: GlobePositions | null; computing: boolean } {
   const [positions, setPositions] = useState<GlobePositions | null>(null);
   const [computing, setComputing] = useState(false);
@@ -61,6 +69,7 @@ export function useGlobeWorker(
       vietnamRings,
       radius,
       vietnamCoords,
+      vietnamIslands,
     };
 
     worker.postMessage(input);
@@ -69,7 +78,7 @@ export function useGlobeWorker(
       worker.terminate();
       workerRef.current = null;
     };
-  }, [landPolygons, vietnamRings, radius, vietnamCoords]);
+  }, [landPolygons, vietnamRings, radius, vietnamCoords, vietnamIslands]);
 
   return { positions, computing };
 }

@@ -54,6 +54,31 @@ export const VIETNAM_COORDS = {
 };
 
 /**
+ * Vietnam's islands in South China Sea
+ * Paracel Islands (Hoàng Sa) and Spratly Islands (Trường Sa)
+ */
+export const VIETNAM_ISLANDS = [
+  // Hoàng Sa (Paracel Islands) - main islands
+  { name: 'Hoàng Sa - Phú Lâm', lat: 16.8333, lon: 112.3333 },
+  { name: 'Hoàng Sa - Linh Côn', lat: 16.6667, lon: 112.7333 },
+  { name: 'Hoàng Sa - Tri Tôn', lat: 15.7833, lon: 111.2000 },
+  { name: 'Hoàng Sa - Hoàng Sa', lat: 16.5000, lon: 111.6000 },
+  { name: 'Hoàng Sa - Quang Ảnh', lat: 16.0500, lon: 111.5000 },
+  
+  // Trường Sa (Spratly Islands) - main islands  
+  { name: 'Trường Sa - Trường Sa Lớn', lat: 8.6433, lon: 111.9167 },
+  { name: 'Trường Sa - Song Tử Tây', lat: 11.4333, lon: 114.3333 },
+  { name: 'Trường Sa - Sinh Tồn', lat: 9.8833, lon: 114.3333 },
+  { name: 'Trường Sa - Nam Yết', lat: 10.1833, lon: 114.3667 },
+  { name: 'Trường Sa - Sơn Ca', lat: 10.3833, lon: 114.4833 },
+  { name: 'Trường Sa - An Bang', lat: 7.8833, lon: 112.9167 },
+  { name: 'Trường Sa - Thuyền Chài', lat: 8.1000, lon: 113.8167 },
+  { name: 'Trường Sa - Phan Vinh', lat: 8.9500, lon: 113.6833 },
+  { name: 'Trường Sa - Tốc Tan', lat: 8.8167, lon: 113.9833 },
+  { name: 'Trường Sa - Núi Le', lat: 9.0500, lon: 114.1333 },
+];
+
+/**
  * Major world cities to connect to Vietnam
  */
 export const WORLD_CITIES = [
