@@ -21,23 +21,28 @@ interface LandData {
   };
 }
 
-// Vietnam S-shape regions (more accurate than simple bounding box)
-// Divided into 3 main regions: North, Central, South
+// Vietnam S-shape regions - accurate borders avoiding Laos/Cambodia
 const VIETNAM_REGIONS = [
-  // Northern Vietnam (Bắc Bộ) - wider area
-  { latMin: 20.5, latMax: 23.4, lonMin: 102.1, lonMax: 108.0 },
-  // North-Central transition
-  { latMin: 19.0, latMax: 21.5, lonMin: 103.5, lonMax: 107.5 },
-  // Central Vietnam (Trung Bộ) - narrow strip along coast
-  { latMin: 15.5, latMax: 19.5, lonMin: 105.5, lonMax: 109.5 },
-  // Central narrow part
-  { latMin: 13.0, latMax: 16.0, lonMin: 107.0, lonMax: 109.5 },
-  // South-Central
-  { latMin: 11.0, latMax: 13.5, lonMin: 107.5, lonMax: 109.5 },
-  // Southern Vietnam (Nam Bộ) - Mekong Delta area
-  { latMin: 8.5, latMax: 11.5, lonMin: 104.5, lonMax: 107.5 },
-  // Ca Mau peninsula
-  { latMin: 8.5, latMax: 10.0, lonMin: 104.0, lonMax: 105.5 },
+  // Far North (Hà Giang, Cao Bằng, Lào Cai) - border with China
+  { latMin: 22.0, latMax: 23.4, lonMin: 104.0, lonMax: 107.5 },
+  // Northern highlands (Điện Biên, Sơn La, Yên Bái)
+  { latMin: 21.0, latMax: 22.5, lonMin: 103.0, lonMax: 106.0 },
+  // Red River Delta & Northeast (Hà Nội, Hải Phòng, Quảng Ninh)
+  { latMin: 20.0, latMax: 22.0, lonMin: 105.0, lonMax: 108.0 },
+  // North Central (Thanh Hóa, Nghệ An, Hà Tĩnh)
+  { latMin: 18.0, latMax: 20.5, lonMin: 104.5, lonMax: 106.5 },
+  // Central narrow (Quảng Bình, Quảng Trị, Huế) - narrowest part
+  { latMin: 16.0, latMax: 18.5, lonMin: 106.0, lonMax: 108.5 },
+  // South Central coast (Đà Nẵng, Quảng Nam, Quảng Ngãi)
+  { latMin: 14.5, latMax: 16.5, lonMin: 107.5, lonMax: 109.3 },
+  // Central Highlands edge & coast (Bình Định, Phú Yên, Khánh Hòa)
+  { latMin: 12.0, latMax: 15.0, lonMin: 108.0, lonMax: 109.5 },
+  // South (Ninh Thuận, Bình Thuận, Đồng Nai, Bà Rịa)
+  { latMin: 10.5, latMax: 12.5, lonMin: 106.5, lonMax: 109.0 },
+  // Mekong Delta (Hồ Chí Minh, Cần Thơ, Cà Mau)
+  { latMin: 9.0, latMax: 11.0, lonMin: 105.0, lonMax: 107.0 },
+  // Cà Mau peninsula (southernmost tip)
+  { latMin: 8.5, latMax: 9.5, lonMin: 104.5, lonMax: 105.5 },
 ];
 
 // Check if point is in Vietnam region (S-shape aware)
