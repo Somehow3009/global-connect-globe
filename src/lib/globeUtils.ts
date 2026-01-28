@@ -41,8 +41,8 @@ export const GLOBE_CONFIG = {
   lineColor: '#a020f0',
   highlightColor: '#ffffff',
   backgroundColor: '#050510',
-  dotSize: 0.015,
-  dotCount: 15000,
+  dotSize: 0.025,
+  dotCount: 20000,
 };
 
 /**
