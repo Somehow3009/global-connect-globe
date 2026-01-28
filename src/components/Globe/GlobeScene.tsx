@@ -18,7 +18,7 @@ function GlobeContent() {
 export function GlobeScene() {
   return (
     <div className="w-full h-screen" style={{ background: '#050510' }}>
-      <Canvas>
+      <Canvas dpr={1} gl={{ antialias: true, powerPreference: 'high-performance' }}>
         <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
         <ambientLight intensity={0.5} />
         
