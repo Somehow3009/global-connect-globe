@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Line } from '@react-three/drei';
@@ -15,7 +15,7 @@ interface AnimatedLineProps {
   delay: number;
 }
 
-function AnimatedLine({ points, delay }: AnimatedLineProps) {
+const AnimatedLine = forwardRef<any, AnimatedLineProps>(({ points, delay }, _ref) => {
   const lineRef = useRef<any>(null);
   
   const pointsArray = useMemo(() => {
@@ -41,42 +41,44 @@ function AnimatedLine({ points, delay }: AnimatedLineProps) {
       opacity={0.35}
     />
   );
-}
+});
 
 // Small glowing endpoint for destination cities
-function CityMarker({ position, delay }: { position: THREE.Vector3; delay: number }) {
-  const markerRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
-  
-  useFrame((state) => {
-    const time = state.clock.elapsedTime + delay;
-    if (markerRef.current) {
-      const scale = 0.9 + Math.sin(time * 2.5) * 0.15;
-      markerRef.current.scale.setScalar(scale);
-    }
-    if (glowRef.current) {
-      const opacity = 0.3 + Math.sin(time * 2) * 0.15;
-      (glowRef.current.material as THREE.MeshBasicMaterial).opacity = opacity;
-    }
-  });
+const CityMarker = forwardRef<THREE.Group, { position: THREE.Vector3; delay: number }>(
+  ({ position, delay }, _ref) => {
+    const markerRef = useRef<THREE.Mesh>(null);
+    const glowRef = useRef<THREE.Mesh>(null);
+    
+    useFrame((state) => {
+      const time = state.clock.elapsedTime + delay;
+      if (markerRef.current) {
+        const scale = 0.9 + Math.sin(time * 2.5) * 0.15;
+        markerRef.current.scale.setScalar(scale);
+      }
+      if (glowRef.current) {
+        const opacity = 0.3 + Math.sin(time * 2) * 0.15;
+        (glowRef.current.material as THREE.MeshBasicMaterial).opacity = opacity;
+      }
+    });
 
-  return (
-    <group position={position}>
-      {/* Core point */}
-      <mesh ref={markerRef}>
-        <sphereGeometry args={[0.025, 12, 12]} />
-        <meshBasicMaterial color="#aa66ff" />
-      </mesh>
-      {/* Subtle glow */}
-      <mesh ref={glowRef}>
-        <sphereGeometry args={[0.04, 12, 12]} />
-        <meshBasicMaterial color="#8844ff" transparent opacity={0.3} />
-      </mesh>
-    </group>
-  );
-}
+    return (
+      <group position={position}>
+        {/* Core point */}
+        <mesh ref={markerRef}>
+          <sphereGeometry args={[0.025, 12, 12]} />
+          <meshBasicMaterial color="#aa66ff" />
+        </mesh>
+        {/* Subtle glow */}
+        <mesh ref={glowRef}>
+          <sphereGeometry args={[0.04, 12, 12]} />
+          <meshBasicMaterial color="#8844ff" transparent opacity={0.3} />
+        </mesh>
+      </group>
+    );
+  }
+);
 
-export function ConnectionLines() {
+export const ConnectionLines = forwardRef<THREE.Group>((_, _ref) => {
   const vietnamPos = latLonToVector3(
     VIETNAM_COORDS.lat,
     VIETNAM_COORDS.lon,
@@ -105,4 +107,4 @@ export function ConnectionLines() {
       ))}
     </group>
   );
-}
+});

@@ -1,9 +1,9 @@
-import { useRef } from 'react';
+import { useRef, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { latLonToVector3, GLOBE_CONFIG, VIETNAM_COORDS } from '@/lib/globeUtils';
 
-export function VietnamMarker() {
+export const VietnamMarker = forwardRef<THREE.Group>((_, _ref) => {
   const pulse1Ref = useRef<THREE.Mesh>(null);
   const pulse2Ref = useRef<THREE.Mesh>(null);
   
@@ -69,4 +69,4 @@ export function VietnamMarker() {
       </mesh>
     </group>
   );
-}
+});
