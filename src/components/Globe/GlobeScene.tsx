@@ -7,10 +7,10 @@ import { ConnectionLines } from './ConnectionLines';
 
 function GlobeContent() {
   return (
-    <group rotation={[0.3, -1.5, 0]}>
+    <group rotation={[0.2, -1.8, 0]}>
       <Globe />
-      <VietnamMarker />
       <ConnectionLines />
+      <VietnamMarker />
     </group>
   );
 }
