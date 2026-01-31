@@ -20,7 +20,7 @@ interface WorkerOutput {
   vietnamPositions: number[];
 }
 
-interface GlobePositions {
+export interface GlobePositions {
   worldPositions: Float32Array;
   vietnamPositions: Float32Array;
 }

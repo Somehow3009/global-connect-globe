@@ -34,37 +34,43 @@ export const VietnamMarker = forwardRef<THREE.Group>((_, _ref) => {
     <group position={position}>
       {/* Core bright point */}
       <mesh>
-        <sphereGeometry args={[0.06, 24, 24]} />
+        <sphereGeometry args={[0.045, 24, 24]} />
         <meshBasicMaterial color="#ffffff" />
       </mesh>
       
       {/* Inner cyan glow */}
       <mesh ref={pulse1Ref}>
-        <sphereGeometry args={[0.09, 24, 24]} />
+        <sphereGeometry args={[0.075, 24, 24]} />
         <meshBasicMaterial
           color="#00ffff"
           transparent
-          opacity={0.6}
+          opacity={0.4}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
       
       {/* Outer soft glow */}
       <mesh ref={pulse2Ref}>
-        <sphereGeometry args={[0.14, 24, 24]} />
+        <sphereGeometry args={[0.11, 24, 24]} />
         <meshBasicMaterial
           color="#00ffff"
           transparent
-          opacity={0.35}
+          opacity={0.25}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
       
       {/* Ambient halo */}
       <mesh>
-        <sphereGeometry args={[0.22, 24, 24]} />
+        <sphereGeometry args={[0.18, 24, 24]} />
         <meshBasicMaterial
           color="#00aaaa"
           transparent
           opacity={0.12}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
     </group>

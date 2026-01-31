@@ -1,6 +1,9 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
+import * as THREE from 'three';
+import { cn } from '@/lib/utils';
+import { latLonToVector3, VIETNAM_COORDS } from '@/lib/globeUtils';
 import { Globe } from './Globe';
 import { VietnamMarker } from './VietnamMarker';
 import { ConnectionLines } from './ConnectionLines';
@@ -15,11 +18,25 @@ function GlobeContent() {
   );
 }
 
-export function GlobeScene() {
+interface GlobeSceneProps {
+  className?: string;
+}
+
+export function GlobeScene({ className }: GlobeSceneProps) {
+  const focusCoords = VIETNAM_COORDS;
+  const cameraPosition = useMemo(() => {
+    const baseRotation = new THREE.Euler(0.2, -1.8, 0, 'XYZ');
+    const vnVector = latLonToVector3(focusCoords.lat, focusCoords.lon, 1)
+      .normalize()
+      .applyEuler(baseRotation);
+    const distance = 5.8;
+    return vnVector.multiplyScalar(-distance);
+  }, []);
+
   return (
-    <div className="w-full h-screen" style={{ background: '#050510' }}>
+    <div className={cn('w-full h-full', className)}>
       <Canvas dpr={1} gl={{ antialias: true, powerPreference: 'high-performance' }}>
-        <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
+        <PerspectiveCamera makeDefault position={[cameraPosition.x, cameraPosition.y, cameraPosition.z]} fov={45} />
         <ambientLight intensity={0.5} />
         
         <Suspense fallback={null}>
@@ -30,9 +47,9 @@ export function GlobeScene() {
           enablePan={false}
           enableZoom={true}
           autoRotate={true}
-          autoRotateSpeed={0.5}
-          minDistance={3}
-          maxDistance={10}
+          autoRotateSpeed={2.0}
+          minDistance={4.2}
+          maxDistance={9}
           enableDamping
           dampingFactor={0.05}
         />

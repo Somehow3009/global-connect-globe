@@ -4,6 +4,7 @@ import { GLOBE_CONFIG, VIETNAM_COORDS, VIETNAM_ISLANDS } from '@/lib/globeUtils'
 import type { Ring } from '@/lib/polygonUtils';
 import { extractRingsFromFeature, pointInAnyRing } from '@/lib/polygonUtils';
 import { useGlobeWorker } from '@/hooks/useGlobeWorker';
+import { usePrecomputedGlobePositions } from '@/hooks/usePrecomputedGlobePositions';
 
 interface LandData {
   type: string;
@@ -36,11 +37,18 @@ interface CountriesData {
 export function Globe() {
   const [landPolygons, setLandPolygons] = useState<Ring[]>([]);
   const [vietnamRings, setVietnamRings] = useState<Ring[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const { positions: precomputedPositions, loading: precomputedLoading } = usePrecomputedGlobePositions();
 
   // Load land polygons + Vietnam country polygon (real border)
   useEffect(() => {
     let cancelled = false;
+
+    if (precomputedLoading) return;
+    if (precomputedPositions) {
+      setLoading(false);
+      return;
+    }
 
     async function load() {
       try {
@@ -104,18 +112,21 @@ export function Globe() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [precomputedLoading, precomputedPositions]);
 
   // Use Web Worker for heavy computation
-  const { positions, computing } = useGlobeWorker(
-    landPolygons,
-    vietnamRings,
+  const { positions: workerPositions, computing } = useGlobeWorker(
+    precomputedPositions ? [] : landPolygons,
+    precomputedPositions ? [] : vietnamRings,
     GLOBE_CONFIG.radius,
     VIETNAM_COORDS,
     VIETNAM_ISLANDS
   );
 
-  if (loading || computing || !positions) {
+  const positions = precomputedPositions ?? workerPositions;
+  const isLoading = precomputedLoading || loading || computing || !positions;
+
+  if (isLoading) {
     return (
       <mesh>
         <sphereGeometry args={[GLOBE_CONFIG.radius, 32, 32]} />
@@ -128,6 +139,12 @@ export function Globe() {
 
   return (
     <group>
+      {/* Depth mask to hide the far hemisphere */}
+      <mesh renderOrder={-1}>
+        <sphereGeometry args={[GLOBE_CONFIG.radius - 0.02, 32, 32]} />
+        <meshBasicMaterial colorWrite={false} />
+      </mesh>
+
       {/* World map dots - subtle cyan */}
       <points>
         <bufferGeometry>
