@@ -65,7 +65,7 @@ export function Globe() {
         ])) as [LandData, CountriesData];
 
         // Land polygons
-        const land = topojson.feature(landData, landData.objects.land) as any;
+        const land = topojson.feature(landData as any, (landData as any).objects.land) as any;
         const polygons: Ring[] = [];
 
         land.features.forEach((feature: any) => {
