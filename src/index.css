@@ -1,3 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Core palette */
+  --background: 230 50% 3%;
+  --foreground: 0 0% 100%;
+  
+  /* Primary - Cyan accent */
+  --primary: 180 100% 50%;
+  --primary-foreground: 230 50% 3%;
+  --primary-glow: 180 100% 60%;
+  
+  /* Secondary - Purple accent */
+  --secondary: 260 100% 63%;
+  --secondary-foreground: 0 0% 100%;
+  
+  /* Muted */
+  --muted: 230 30% 15%;
+  --muted-foreground: 230 20% 60%;
+  
+  /* Accent */
+  --accent: 180 80% 40%;
+  --accent-foreground: 0 0% 100%;
+  
+  /* Card */
+  --card: 230 40% 6%;
+  --card-foreground: 0 0% 100%;
+  
+  /* Border */
+  --border: 230 30% 15%;
+  
+  /* Ring */
+  --ring: 180 100% 50%;
+  
+  /* Radius */
+  --radius: 0.75rem;
+}
+
 html,
 body,
 #root {
@@ -6,15 +48,120 @@ body,
 
 body {
   margin: 0;
-  background: #050510;
-  color: #ffffff;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Utility classes */
 .w-full {
   width: 100%;
 }
 
 .h-full {
   height: 100%;
+}
+
+/* Gradient utilities */
+.gradient-text {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--secondary) / 0.5));
+  border-radius: inherit;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 40px -10px hsl(var(--primary) / 0.4);
+}
+
+.glow-secondary {
+  box-shadow: 0 0 40px -10px hsl(var(--secondary) / 0.4);
+}
+
+/* Animation utilities */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+}
+
+.animate-fade-up-delay-1 {
+  animation: fade-up 0.6s ease-out 0.1s forwards;
+  opacity: 0;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fade-up 0.6s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-fade-up-delay-3 {
+  animation: fade-up 0.6s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }
